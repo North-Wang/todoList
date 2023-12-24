@@ -59,6 +59,7 @@ const getCity = async function (params) {
 };
 
 const searchCity = async function (keyword) {
+  console.log("搜尋", keyword);
   const regex = new RegExp(keyword, "gi");
 
   //check if there had cache data
@@ -120,6 +121,7 @@ const checkCacheAndReturn = (keyword) => {
     return undefined;
   }
 };
+
 watch(keyword, async function (keyword) {
   if (keyword != "") {
     searchCity(keyword);
