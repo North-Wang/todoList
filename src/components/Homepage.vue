@@ -37,7 +37,7 @@ const allCityList = ref([]);
 const backupAllCity = ref([]);
 const keyword = ref("");
 const resultCityList = ref([]);
-const cacheResult = new Map(); //儲存已經搜尋過的結果，避免重複運算，影響效能
+const cacheResult = ref(new Map()); //儲存已經搜尋過的結果，避免重複運算，影響效能
 const getCity = async function (params) {
   const url =
     "https://gist.githubusercontent.com/Miserlou/c5cd8364bf9b2420bb29/raw/2bf258763cdddd704f8ffd3ea9a3e81d25e2c6f6/cities.json";
@@ -54,25 +54,38 @@ const getCity = async function (params) {
   }
 };
 
-const searchCisty = (keyword) => {
+const searchCity = async function (keyword) {
   console.log("搜尋", keyword);
+  if (checkCacheAndReturn(keyword) != undefined) {
+    resultCityList.value = checkCacheAndReturn(keyword);
+    return;
+  }
   resultCityList.value = allCityList.value.filter((city) => {
     return city.city.includes(keyword);
   });
   if (resultCityList.value.length !== 0) {
-    saveCache(keyword, result);
+    saveCache(keyword, resultCityList.value);
   }
 };
 
 const saveCache = (keyword, result) => {
-  console.log("快取資料", cacheResult.value);
+  if (cacheResult.value[keyword] === undefined) {
+    cacheResult.value[keyword] = result;
+  }
 };
-
+const checkCacheAndReturn = (keyword) => {
+  if (cacheResult.value[keyword] != undefined) {
+    console.log("使用快取資料");
+    return cacheResult.value[keyword];
+  } else {
+    return undefined;
+  }
+};
 watch(
   keyword,
   async function (keyword) {
     if (keyword != "") {
-      searchCisty(keyword);
+      searchCity(keyword);
     }
   },
   200
