@@ -6,26 +6,30 @@
       placeholder="City or State"
       v-model="keyword"
     />
-    <ul class="suggestions">
-      <div v-if="keyword === ''" class="default-city-list">
+    <div class="p-0 m-0 relative">
+      <ul v-if="keyword === ''" class="suggestions">
         <li>Filter for a city</li>
         <li>or a state</li>
-      </div>
-      <div v-else class="city-list">
-        <li class="justify-center" v-if="resultCityList.length === 0">
-          no match cities
+      </ul>
+      <ul v-else class="suggestions">
+        <li class="flex justify-center" v-if="resultCityList.length === 0">
+          no cities match
         </li>
         <li
-          v-for="citys in resultCityList"
-          :key="citys"
+          v-for="place in resultCityList"
+          :key="place"
           class="flex justify-between"
           v-if="resultCityList.length != 0"
         >
-          <div>{{ citys.city }}</div>
-          <div>{{ parseInt(citys.population)?.toLocaleString() }}</div>
+          <span v-html="place.html" class="city-place-name"></span>
+          <ul>
+            {{
+              parseInt(place.population)?.toLocaleString()
+            }}
+          </ul>
         </li>
-      </div>
-    </ul>
+      </ul>
+    </div>
   </form>
 </template>
 
@@ -43,7 +47,7 @@ const getCity = async function (params) {
     "https://gist.githubusercontent.com/Miserlou/c5cd8364bf9b2420bb29/raw/2bf258763cdddd704f8ffd3ea9a3e81d25e2c6f6/cities.json";
   try {
     axios.get(url).then((result) => {
-      console.log("result", result);
+      console.log("get all city data", result);
       allCityList.value = result.data;
       backupAllCity.value = allCityList.value;
     });
@@ -55,17 +59,51 @@ const getCity = async function (params) {
 };
 
 const searchCity = async function (keyword) {
-  console.log("搜尋", keyword);
-  if (checkCacheAndReturn(keyword) != undefined) {
-    resultCityList.value = checkCacheAndReturn(keyword);
-    return;
-  }
-  resultCityList.value = allCityList.value.filter((city) => {
-    return city.city.includes(keyword);
+  //   if (checkCacheAndReturn(keyword) != undefined) {
+  //     resultCityList.value = checkCacheAndReturn(keyword);
+  //     return;
+  //   }
+
+  //filtering if no cache data
+  const regex = new RegExp(keyword, "gi");
+  resultCityList.value = allCityList.value.filter((place) => {
+    return place.city.match(regex) || place.state.match(regex);
   });
+
+  await highLightKeyword(keyword, regex);
+
+  //save cache data
   if (resultCityList.value.length !== 0) {
-    saveCache(keyword, resultCityList.value);
+    saveCache(resultCityList.value);
   }
+};
+
+const highLightKeyword = (regex) => {
+  resultCityList.value.forEach((place) => {
+    const cityMatchText = place.city.match(regex);
+    let cityHtml = place.city;
+    if (cityMatchText) {
+      cityHtml = place.city
+        .toLowerCase()
+        .replace(
+          cityMatchText[0].toLowerCase(),
+          `<span class='bg-yellow-400'>${cityMatchText[0]}</span>`
+        );
+    }
+
+    const stateMatchText = place.state.match(regex);
+    let stateHtml = place.state;
+    if (stateMatchText) {
+      stateHtml = place.state
+        .toLowerCase()
+        .replace(
+          stateMatchText[0].toLowerCase(),
+          `<span class='bg-yellow-400'>${stateMatchText[0]}</span>`
+        );
+    }
+
+    place.html = `<span>${cityHtml},${stateHtml}</span>`; //add <span> to avolid first letter to uppercase
+  });
 };
 
 const saveCache = (keyword, result) => {
@@ -75,7 +113,7 @@ const saveCache = (keyword, result) => {
 };
 const checkCacheAndReturn = (keyword) => {
   if (cacheResult.value[keyword] != undefined) {
-    console.log("使用快取資料");
+    //had cache data
     return cacheResult.value[keyword];
   } else {
     return undefined;
@@ -115,14 +153,7 @@ onMounted(() => {
   font-size: 40px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.12), inset 0 0 2px rgba(0, 0, 0, 0.19);
 }
-.suggestions {
-  margin: 0;
-  padding: 0;
-  position: relative;
-  /*perspective:20px;*/
-}
-.suggestions li {
-  background: white;
+.suggestions > li {
   list-style: none;
   border-bottom: 1px solid #d8d8d8;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.14);
@@ -130,18 +161,18 @@ onMounted(() => {
   padding: 20px;
   transition: background 0.2s;
   display: flex;
-  justify-content: space-between;
   text-transform: capitalize;
 }
 
-.default-city-list li:nth-child(even),
-.city-list > li:nth-child(even) {
+.suggestions > li:nth-child(even) {
   transform: perspective(100px) rotateX(3deg) translateY(2px) scale(1.001);
   background: linear-gradient(to bottom, #ffffff 0%, #efefef 100%);
 }
-.default-city-list li:nth-child(odd),
-.city-list > li:nth-child(odd) {
+.suggestions > li:nth-child(odd) {
   transform: perspective(100px) rotateX(-3deg) translateY(3px);
   background: linear-gradient(to top, #ffffff 0%, #efefef 100%);
 }
+/* :deep(.city-place-name) {
+  text-transform: none;
+} */
 </style>
