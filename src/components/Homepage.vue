@@ -1,8 +1,10 @@
 <template>
-  <form class="search-form">
+  <form
+    class="max-w-[275px] my-[50px]] my-8 lg:max-w-[400px] dark:text-[#213547]"
+  >
     <input
       type="text"
-      class="search"
+      class="search dark:bg-white"
       placeholder="City or State"
       v-model="keyword"
     />
@@ -35,10 +37,8 @@
 
 <script setup>
 import { ref, watch, onMounted, computed, defineProps } from "vue";
-import axios from "axios";
 
 const allCityList = ref([]);
-const backupAllCity = ref([]);
 const keyword = ref("");
 const resultCityList = ref([]);
 const cacheResult = ref(new Map()); //儲存已經搜尋過的結果，避免重複運算，影響效能
@@ -46,36 +46,37 @@ const getCity = async function (params) {
   const url =
     "https://gist.githubusercontent.com/Miserlou/c5cd8364bf9b2420bb29/raw/2bf258763cdddd704f8ffd3ea9a3e81d25e2c6f6/cities.json";
   try {
-    axios.get(url).then((result) => {
-      console.log("get all city data", result);
-      allCityList.value = result.data;
-      backupAllCity.value = allCityList.value;
-    });
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("get all city data", data);
+        allCityList.value = data;
+      });
   } catch (err) {
     console.warn("連線有誤", err);
     allCityList.value = [];
-    backupAllCity.value = [];
   }
 };
 
 const searchCity = async function (keyword) {
-  //   if (checkCacheAndReturn(keyword) != undefined) {
-  //     resultCityList.value = checkCacheAndReturn(keyword);
-  //     return;
-  //   }
+  const regex = new RegExp(keyword, "gi");
+
+  //check if there had cache data
+  const cacheData = checkCacheAndReturn(keyword);
+  if (cacheData) {
+    resultCityList.value = cacheData;
+    highLightKeyword(regex);
+    return;
+  }
 
   //filtering if no cache data
-  const regex = new RegExp(keyword, "gi");
   resultCityList.value = allCityList.value.filter((place) => {
     return place.city.match(regex) || place.state.match(regex);
   });
-
-  await highLightKeyword(keyword, regex);
+  await highLightKeyword(regex);
 
   //save cache data
-  if (resultCityList.value.length !== 0) {
-    saveCache(resultCityList.value);
-  }
+  saveCache(keyword, resultCityList.value);
 };
 
 const highLightKeyword = (regex) => {
@@ -106,9 +107,9 @@ const highLightKeyword = (regex) => {
   });
 };
 
-const saveCache = (keyword, result) => {
+const saveCache = (keyword, newData) => {
   if (cacheResult.value[keyword] === undefined) {
-    cacheResult.value[keyword] = result;
+    cacheResult.value[keyword] = newData;
   }
 };
 const checkCacheAndReturn = (keyword) => {
@@ -119,15 +120,11 @@ const checkCacheAndReturn = (keyword) => {
     return undefined;
   }
 };
-watch(
-  keyword,
-  async function (keyword) {
-    if (keyword != "") {
-      searchCity(keyword);
-    }
-  },
-  200
-);
+watch(keyword, async function (keyword) {
+  if (keyword != "") {
+    searchCity(keyword);
+  }
+});
 
 onMounted(() => {
   getCity();
@@ -135,11 +132,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.search-form {
-  max-width: 400px;
-  margin: 50px auto;
-}
-.search-form .search {
+.search {
   margin: 0;
   text-align: center;
   outline: 0;

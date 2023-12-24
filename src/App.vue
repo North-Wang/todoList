@@ -1,7 +1,7 @@
 <script setup></script>
 
 <template>
-  <div class="flex flex-col items-center justify-center ">
+  <div class="flex flex-col">
     <RouterView></RouterView>
   </div>
 </template>
