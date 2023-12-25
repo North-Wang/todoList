@@ -12,14 +12,14 @@
         <li>or a state</li>
       </ul>
       <ul v-else class="suggestions">
-        <li class="flex justify-center" v-if="allSearchResultList.length === 0">
+        <li class="flex justify-center" v-if="searchResultList.length === 0">
           no cities match
         </li>
         <li
-          v-for="place in allSearchResultList"
+          v-for="place in searchResultList"
           :key="place"
           class="flex justify-between"
-          v-if="allSearchResultList.length != 0"
+          v-if="searchResultList.length != 0"
         >
           <ul v-html="place.html" class="city-place-name"></ul>
           <ul>
@@ -28,6 +28,20 @@
             }}
           </ul>
         </li>
+      </ul>
+      <ul
+        class="flex justify-center mt-4"
+        v-if="
+          allSearchResultList.length != 0 &&
+          searchResultList.length < allSearchResultList.length
+        "
+      >
+        <img
+          :src="moreOptionBlack"
+          alt="more option"
+          class="bg-white w-[50px] h-[50px] rounded-full flex items-center justify-center cursor-pointer opacity-90"
+          @click="getMoreData"
+        />
       </ul>
     </div>
   </form>
@@ -38,12 +52,16 @@ import { ref, toRefs, watch, onMounted, computed, defineProps } from "vue";
 import { storeToRefs } from "pinia";
 import { usePlaceData } from "../store/usePlaceData.js";
 
+//picture
+import moreOptionBlack from "../assets/moreOptionBlack.svg";
+
 const placeData = usePlaceData();
 const { allPlaceData } = storeToRefs(placeData);
 
 const allPlaceList = ref([]);
 const keyword = ref("");
 const allSearchResultList = ref([]);
+const searchResultList = ref([]);
 const cacheResult = ref(new Map()); //save the result which had filtered，avoid repeatedly call api to influence performance
 const getCity = async function (params) {
   const url =
@@ -80,6 +98,7 @@ const searchCity = async function (keyword) {
   const cacheData = checkCacheAndReturn(keyword);
   if (cacheData) {
     allSearchResultList.value = cacheData;
+    searchResultList.value = allSearchResultList.value.slice(0, 10);
     highLightKeyword(regex);
     return;
   }
@@ -88,6 +107,7 @@ const searchCity = async function (keyword) {
   allSearchResultList.value = allPlaceList.value.filter((place) => {
     return place.city.match(regex) || place.state.match(regex);
   });
+  searchResultList.value = allSearchResultList.value.slice(0, 10);
   await highLightKeyword(regex);
 
   //save cache data
@@ -99,7 +119,7 @@ const debounceSearchCity = debounce((keyword) => {
 }, 500);
 
 const highLightKeyword = (regex) => {
-  allSearchResultList.value.forEach((place) => {
+  searchResultList.value.forEach((place) => {
     const cityMatchText = place.city.match(regex);
     let cityHtml = place.city;
     if (cityMatchText) {
@@ -138,6 +158,20 @@ const checkCacheAndReturn = (keyword) => {
   } else {
     return undefined;
   }
+};
+
+const getMoreData = () => {
+  if (searchResultList.value.length >= allSearchResultList.value.length) {
+    return;
+  }
+  const range = 10;
+  const newStartIndex = searchResultList.value.length + 1;
+  const newPlaceList = allSearchResultList.value.slice(
+    newStartIndex,
+    newStartIndex + range
+  );
+  console.log("newPlaceList", newPlaceList);
+  searchResultList.value = searchResultList.value.concat(newPlaceList);
 };
 
 watch(keyword, async function (keyword) {
