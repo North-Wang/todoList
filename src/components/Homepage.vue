@@ -1,8 +1,5 @@
 <template>
-  <form
-    ref="el"
-    class="max-w-[275px] my-8 lg:max-w-[400px] dark:text-[#213547]"
-  >
+  <form class="max-w-[275px] my-8 lg:max-w-[400px] dark:text-[#213547]">
     <input
       type="text"
       class="search dark:bg-white"
@@ -40,7 +37,6 @@
 import { ref, toRefs, watch, onMounted, computed, defineProps } from "vue";
 import { storeToRefs } from "pinia";
 import { usePlaceData } from "../store/usePlaceData.js";
-import { useScroll, useVirtualList } from "@vueuse/core";
 
 const placeData = usePlaceData();
 const { allPlaceData } = storeToRefs(placeData);
@@ -48,16 +44,7 @@ const { allPlaceData } = storeToRefs(placeData);
 const allPlaceList = ref([]);
 const keyword = ref("");
 const allSearchResultList = ref([]);
-const searchResultList = ref([]);
-const cacheResult = ref(new Map()); //儲存已經搜尋過的結果，避免重複運算，影響效能
-
-// const { list, containerProps, wrapperProps } = useVirtualList(
-//   allSearchResultList,
-//   {
-//     itemHeight: 20,
-//   }
-// );
-
+const cacheResult = ref(new Map()); //save the result which had filtered，avoid repeatedly call api to influence performance
 const getCity = async function (params) {
   const url =
     "https://gist.githubusercontent.com/Miserlou/c5cd8364bf9b2420bb29/raw/2bf258763cdddd704f8ffd3ea9a3e81d25e2c6f6/cities.json";
