@@ -58,6 +58,16 @@ const getCity = async function (params) {
   }
 };
 
+const debounce = (fn, delay = 500) => {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      fn(...args);
+    }, delay);
+  };
+};
+
 const searchCity = async function (keyword) {
   console.log("搜尋", keyword);
   const regex = new RegExp(keyword, "gi");
@@ -79,6 +89,10 @@ const searchCity = async function (keyword) {
   //save cache data
   saveCache(keyword, resultCityList.value);
 };
+
+const debounceSearchCity = debounce((keyword) => {
+  searchCity(keyword);
+}, 500);
 
 const highLightKeyword = (regex) => {
   resultCityList.value.forEach((place) => {
@@ -124,7 +138,7 @@ const checkCacheAndReturn = (keyword) => {
 
 watch(keyword, async function (keyword) {
   if (keyword != "") {
-    searchCity(keyword);
+    debounceSearchCity(keyword);
   }
 });
 
