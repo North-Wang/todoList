@@ -1,6 +1,7 @@
 <template>
   <form
-    class="max-w-[275px] my-[50px]] my-8 lg:max-w-[400px] dark:text-[#213547]"
+    ref="el"
+    class="max-w-[275px] my-8 lg:max-w-[400px] dark:text-[#213547]"
   >
     <input
       type="text"
@@ -9,21 +10,21 @@
       v-model="keyword"
     />
     <div class="p-0 m-0 relative">
-      <ul v-if="keyword === ''" class="suggestions">
+      <ul v-if="keyword === ''" class="suggestions overflow-hidden">
         <li>Filter for a city</li>
         <li>or a state</li>
       </ul>
       <ul v-else class="suggestions">
-        <li class="flex justify-center" v-if="resultCityList.length === 0">
+        <li class="flex justify-center" v-if="allSearchResultList.length === 0">
           no cities match
         </li>
         <li
-          v-for="place in resultCityList"
+          v-for="place in allSearchResultList"
           :key="place"
           class="flex justify-between"
-          v-if="resultCityList.length != 0"
+          v-if="allSearchResultList.length != 0"
         >
-          <span v-html="place.html" class="city-place-name"></span>
+          <ul v-html="place.html" class="city-place-name"></ul>
           <ul>
             {{
               parseInt(place.population)?.toLocaleString()
@@ -36,12 +37,27 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, computed, defineProps } from "vue";
+import { ref, toRefs, watch, onMounted, computed, defineProps } from "vue";
+import { storeToRefs } from "pinia";
+import { usePlaceData } from "../store/usePlaceData.js";
+import { useScroll, useVirtualList } from "@vueuse/core";
 
-const allCityList = ref([]);
+const placeData = usePlaceData();
+const { allPlaceData } = storeToRefs(placeData);
+
+const allPlaceList = ref([]);
 const keyword = ref("");
-const resultCityList = ref([]);
+const allSearchResultList = ref([]);
+const searchResultList = ref([]);
 const cacheResult = ref(new Map()); //儲存已經搜尋過的結果，避免重複運算，影響效能
+
+// const { list, containerProps, wrapperProps } = useVirtualList(
+//   allSearchResultList,
+//   {
+//     itemHeight: 20,
+//   }
+// );
+
 const getCity = async function (params) {
   const url =
     "https://gist.githubusercontent.com/Miserlou/c5cd8364bf9b2420bb29/raw/2bf258763cdddd704f8ffd3ea9a3e81d25e2c6f6/cities.json";
@@ -50,11 +66,13 @@ const getCity = async function (params) {
       .then((res) => res.json())
       .then((data) => {
         console.log("get all city data", data);
-        allCityList.value = data;
+        allPlaceList.value = data;
+        placeData.allPlaceData = data;
       });
   } catch (err) {
     console.warn("連線有誤", err);
-    allCityList.value = [];
+    allPlaceList.value = [];
+    placeData.allPlaceData = [];
   }
 };
 
@@ -69,25 +87,24 @@ const debounce = (fn, delay = 500) => {
 };
 
 const searchCity = async function (keyword) {
-  console.log("搜尋", keyword);
   const regex = new RegExp(keyword, "gi");
 
   //check if there had cache data
   const cacheData = checkCacheAndReturn(keyword);
   if (cacheData) {
-    resultCityList.value = cacheData;
+    allSearchResultList.value = cacheData;
     highLightKeyword(regex);
     return;
   }
 
   //filtering if no cache data
-  resultCityList.value = allCityList.value.filter((place) => {
+  allSearchResultList.value = allPlaceList.value.filter((place) => {
     return place.city.match(regex) || place.state.match(regex);
   });
   await highLightKeyword(regex);
 
   //save cache data
-  saveCache(keyword, resultCityList.value);
+  saveCache(keyword, allSearchResultList.value);
 };
 
 const debounceSearchCity = debounce((keyword) => {
@@ -95,7 +112,7 @@ const debounceSearchCity = debounce((keyword) => {
 }, 500);
 
 const highLightKeyword = (regex) => {
-  resultCityList.value.forEach((place) => {
+  allSearchResultList.value.forEach((place) => {
     const cityMatchText = place.city.match(regex);
     let cityHtml = place.city;
     if (cityMatchText) {
@@ -143,7 +160,12 @@ watch(keyword, async function (keyword) {
 });
 
 onMounted(() => {
-  getCity();
+  if (Object.values(allPlaceData.value).length === 0) {
+    //if Pinia no cache data
+    getCity();
+  } else {
+    allPlaceList.value = allPlaceData.value;
+  }
 });
 </script>
 
