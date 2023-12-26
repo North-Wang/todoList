@@ -32,6 +32,7 @@
       <ul
         class="flex justify-center mt-4"
         v-if="
+          keyword != '' &&
           allSearchResultList.length != 0 &&
           searchResultList.length < allSearchResultList.length
         "
@@ -55,6 +56,8 @@ import { usePlaceData } from "../store/usePlaceData.js";
 //picture
 import moreOptionBlack from "../assets/moreOptionBlack.svg";
 
+const deviceInfo = navigator.userAgent;
+const isPhone = ref(/mobile/i.test(deviceInfo));
 const placeData = usePlaceData();
 const { allPlaceData } = storeToRefs(placeData);
 
@@ -63,7 +66,8 @@ const keyword = ref("");
 const allSearchResultList = ref([]);
 const searchResultList = ref([]);
 const cacheResult = ref(new Map()); //save the result which had filtered，avoid repeatedly call api to influence performance
-const getCity = async function (params) {
+const regex = ref("");
+const getCity = async function () {
   const url =
     "https://gist.githubusercontent.com/Miserlou/c5cd8364bf9b2420bb29/raw/2bf258763cdddd704f8ffd3ea9a3e81d25e2c6f6/cities.json";
   try {
@@ -92,23 +96,24 @@ const debounce = (fn, delay = 500) => {
 };
 
 const searchCity = async function (keyword) {
-  const regex = new RegExp(keyword, "gi");
+  // const regex = new RegExp(keyword, "gi");
 
   //check if there had cache data
   const cacheData = checkCacheAndReturn(keyword);
   if (cacheData) {
     allSearchResultList.value = cacheData;
     searchResultList.value = allSearchResultList.value.slice(0, 10);
-    highLightKeyword(regex);
+    highLightKeyword();
     return;
   }
 
   //filtering if no cache data
   allSearchResultList.value = allPlaceList.value.filter((place) => {
-    return place.city.match(regex) || place.state.match(regex);
+    return place.city.match(regex.value) || place.state.match(regex.value);
   });
-  searchResultList.value = allSearchResultList.value.slice(0, 10);
-  await highLightKeyword(regex);
+  const range = isPhone.value ? 8 : 10;
+  searchResultList.value = allSearchResultList.value.slice(0, range);
+  await highLightKeyword();
 
   //save cache data
   saveCache(keyword, allSearchResultList.value);
@@ -118,9 +123,9 @@ const debounceSearchCity = debounce((keyword) => {
   searchCity(keyword);
 }, 500);
 
-const highLightKeyword = (regex) => {
+const highLightKeyword = () => {
   searchResultList.value.forEach((place) => {
-    const cityMatchText = place.city.match(regex);
+    const cityMatchText = place.city.match(regex.value);
     let cityHtml = place.city;
     if (cityMatchText) {
       cityHtml = place.city
@@ -131,7 +136,7 @@ const highLightKeyword = (regex) => {
         );
     }
 
-    const stateMatchText = place.state.match(regex);
+    const stateMatchText = place.state.match(regex.value);
     let stateHtml = place.state;
     if (stateMatchText) {
       stateHtml = place.state
@@ -142,7 +147,7 @@ const highLightKeyword = (regex) => {
         );
     }
 
-    place.html = `<span>${cityHtml},${stateHtml}</span>`; //add <span> to avolid first letter to uppercase
+    place.html = `<span>${cityHtml},${stateHtml}</span>`; //add <span> to avoid first letter to uppercase
   });
 };
 
@@ -164,18 +169,20 @@ const getMoreData = () => {
   if (searchResultList.value.length >= allSearchResultList.value.length) {
     return;
   }
-  const range = 10;
-  const newStartIndex = searchResultList.value.length + 1;
+  const range = isPhone.value ? 8 : 10;
+  const newStartIndex = searchResultList.value.length;
   const newPlaceList = allSearchResultList.value.slice(
     newStartIndex,
     newStartIndex + range
   );
-  console.log("newPlaceList", newPlaceList);
+
   searchResultList.value = searchResultList.value.concat(newPlaceList);
+  highLightKeyword();
 };
 
 watch(keyword, async function (keyword) {
   if (keyword != "") {
+    regex.value = new RegExp(keyword, "gi");
     debounceSearchCity(keyword);
   }
 });
