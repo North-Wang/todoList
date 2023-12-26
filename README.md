@@ -1,21 +1,8 @@
-# Vue 3 + Vite
+![image](https://github.com/North-Wang/todoList/assets/103781180/2a91e212-a411-4eb6-a972-a7e5b954e742)
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
-
-While this project uses Vue.js, Vite supports many popular JS frameworks. [See all the supported frameworks](https://vitejs.dev/guide/#scaffolding-your-first-vite-project).
-
-## Deploy Your Own
-
-Deploy your own Vite project with Vercel.
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/vercel/vercel/tree/main/examples/vite&template=vite)
-
-_Live Example: https://vite-vue-template.vercel.app_
-
-### Deploying From Your Terminal
-
-You can deploy your new Vite project with a single command from your terminal using [Vercel CLI](https://vercel.com/download):
-
-```shell
-$ vercel
-```
+專案介紹：
+1. 根據https://codepen.io/tariso/pen/LyoaRM JavaScript 30 Day 6 Ajax Type Ahead的範例製作與部分優化
+2. 主要以使用Vue.js + Vite + Tailwind.css + Pinia開發，搭配Versel部屬網站。
+   * 考量到快速開發且不想直接修改style，所以使用Tailwind.css
+   * Pinia和相關套件，能儲存api的資料，在條件沒變的情況下，不用重複call api
+  
