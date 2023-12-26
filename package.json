@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && ./deploy/ghpages.js"
   },
   "dependencies": {
     "@vueuse/core": "^10.6.1",
@@ -22,6 +23,7 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
     "autoprefixer": "^10.4.16",
+    "gh-pages": "^6.1.1",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
     "vite": "^4.5.0"
