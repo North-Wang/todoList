@@ -1,3 +1,5 @@
+專案網址：https://wilson-todo-list.vercel.app/#/
+
 ![image](https://github.com/North-Wang/todoList/assets/103781180/2a91e212-a411-4eb6-a972-a7e5b954e742)
 
 專案介紹：
@@ -13,6 +15,7 @@
   * 用new Map()儲存已搜尋的結果，key為關鍵字；value為搜尋結果(Object)
   * call api時使用try...catch，如果連線錯誤會有console.warn()訊息以及錯誤處裡
   * 搜尋欄清空時，list會恢復成初始狀態
+  * 有設計無匹配結果時會顯示的文字
   * 有設計RWD，還有考量dark mode的情況
   
   
